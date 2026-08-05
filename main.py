@@ -39,6 +39,21 @@ def main():
     plt.show()
 
 
+     # * filling the missing values in the person_emp_Length column with the median value of that column
+     # * Because the filling the missing values with the median method is less sensitive to outliers than the mean
+    emp_median = DataFrame["person_emp_length"].median()
+    DataFrame["person_emp_length"] = DataFrame["person_emp_length"].fillna(emp_median)
+
+    DataFrame["loan_int_rate"] = DataFrame.groupby("loan_grade")["loan_int_rate"].transform(lambda x: x.fillna(x.median()))
+
+    print("=" *80)
+    print("[bold red] DataFrame Null Values[/bold red]")
+    print("=" *80)
+    print(DataFrame.isnull().sum())
+    print("=" *80)
+
+
+
 
 
 
