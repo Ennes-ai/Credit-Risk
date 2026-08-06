@@ -69,8 +69,8 @@ def main():
     print("[bold red] DataFrame Head After Encoding [/bold red] ")
     print("=" *80)
     print(DataFrame.head())
-    print("=" *80)
-    print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes)
+    #print("=" *80)
+    #print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes) # ! Encoding is over all column is to be correct data type is int64
 
 
 
