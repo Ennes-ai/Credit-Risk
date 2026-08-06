@@ -16,7 +16,13 @@ def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
             plt.title(f"Distribution of {column}")
             plt.show()
             
+"""
+person_income, person_age, person_emp_length 
 
+gibi grafiklerin hepsi Sağa Çarpık dağılımdır.
+Sağa Çarpık Dağılımın Altın Kuralı:Kuyruk sağdaki büyük sayılara doğru uzadığı için ortalamayı (mean) yukarı çeker.
+Bu grafiklerde her zaman: Ortalama (Mean) > Medyan (Median) çıkar.
+"""
 
 def detect_outliers(data: pd.Series) -> pd.Series:
     global continuous_cols
