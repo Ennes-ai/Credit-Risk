@@ -3,11 +3,52 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from rich import print
+from IQR import Calculate
 
 
+
+
+def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
+    for column in DataFrame.columns:
+        if DataFrame[column].dtype in ["int64", "float64"]:
+            plt.figure(figsize=(10, 6))
+            sns.histplot(DataFrame[column], bins=30, kde=True)
+            plt.title(f"Distribution of {column}")
+            plt.show()
+            
+
+
+def detect_outliers(data: pd.Series) -> pd.Series:
+    global continuous_cols
+    # ! just take the continuous columns to find the outliers
+    continuous_cols = [
+        "person_age",
+        "person_income",
+        "person_emp_length",
+        "loan_amnt",
+        "loan_int_rate"
+    ]
+
+    print("=" * 80)
+    print("[bold red] Outliers in DataFrame [/bold red]")
+    print("=" * 80)
+
+  
+    for column in continuous_cols:
+        outliers = calculate.get_outliers(column)
+        outlier_count = len(outliers)
+        
+       
+        percentage = (outlier_count / len(DataFrame)) * 100
+        
+        print(f"📌 [bold cyan]{column:20}[/bold cyan] : [bold red]{outlier_count:5d}[/bold red] outliers count (%{percentage:.2f})")
+
+    print("=" * 80)
 
 def main():
+    global DataFrame, calculate
     DataFrame = pd.read_csv("credit_risk_dataset.csv")
+    calculate = Calculate(DataFrame = DataFrame)
 
     print("=" *80)
     print("[bold red] DataFrame Head [/bold red] \n ", DataFrame.head(20))
@@ -34,9 +75,8 @@ def main():
 
     Dataframe_Filtered = DataFrame[DataFrame["person_income"] < 150000]
 
-    #plt.figure(figsize=(10, 6))
-    #sns.histplot(Dataframe_Filtered["loan_amnt"], bins=30, kde=True)
-    #plt.show()
+
+    
 
 
      # * filling the missing values in the person_emp_Length column with the median value of that column
@@ -45,6 +85,31 @@ def main():
     DataFrame["person_emp_length"] = DataFrame["person_emp_length"].fillna(emp_median)
 
     DataFrame["loan_int_rate"] = DataFrame.groupby("loan_grade")["loan_int_rate"].transform(lambda x: x.fillna(x.median()))
+
+    detect_outliers(DataFrame)
+    # ! claer the outliers in the continuous columns
+    DataFrame = DataFrame[DataFrame["person_age"] < 100]
+    DataFrame = DataFrame[DataFrame["person_emp_length"] < 60]
+
+    income_upper_limit = DataFrame["person_income"].quantile(0.99)
+    DataFrame["person_income"] = np.where(DataFrame["person_income"] > income_upper_limit, income_upper_limit, DataFrame["person_income"])
+
+
+    loan_cap = DataFrame["loan_amnt"].quantile(0.99)
+    DataFrame["loan_amnt"] = np.where(DataFrame["loan_amnt"] > loan_cap, loan_cap, DataFrame["loan_amnt"])
+
+
+    print("=" * 80)
+    print("[bold green] Temizlik Sonrası Maksimum Değerler [/bold green]")
+    print("Maksimum Yaş:          ", DataFrame["person_age"].max())
+    print("Maksimum Gelir:        ", DataFrame["person_income"].max())
+    print("Maksimum Kredi Tutarı: ", DataFrame["loan_amnt"].max())
+    print("=" * 80)
+
+    sns.histplot(DataFrame["loan_amnt"], bins=30, kde=True)
+    plt.title("after the outlier removal")
+    plt.show()
+
 
     # print("=" *80)
     # print("[bold red] DataFrame Null Values[/bold red]")
@@ -60,6 +125,11 @@ def main():
     print(DataFrame.dtypes)
     print("=" *80)
 
+
+    visualize_data(DataFrame= DataFrame, Target_Column=Target_Column)
+
+    # ! Encoding the categorical columns to numerical values
+
     DataFrame["cb_person_default_on_file"] = DataFrame["cb_person_default_on_file"].map({"Y": 1, "N": 0})
     DataFrame["loan_grade"] = DataFrame["loan_grade"].map({"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7})
 
@@ -71,9 +141,6 @@ def main():
     print(DataFrame.head())
     #print("=" *80)
     #print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes) # ! Encoding is over all column is to be correct data type is int64
-
-
-
 
 
 

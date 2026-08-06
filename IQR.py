@@ -107,4 +107,4 @@ class Calculate:
             outliers = self.DataFrame[(self.DataFrame[column_name] < lower_bound) | (self.DataFrame[column_name] > upper_bound)]
             return outliers
         except Exception as e:
-            raise ValueError(f"Error  '{column_name}': {e}")
+            raise ValueError(f"Error '{column_name}': {e}")
