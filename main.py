@@ -144,6 +144,25 @@ def main():
     print("=" *80)
     print(DataFrame.isnull().sum().sum() if DataFrame.isnull().sum().sum() > 0 else "[bold green] No Null Values in the DataFrame[/bold green]")
     print("=" *80)
+
+
+    # ! Feature Engineering
+
+    # * Creating a new column called "cred_hist_to_age_ratio" which is storing the ratio of the credit history length to the age of person
+    DataFrame["cred_hist_to_age_ratio"] = (DataFrame["cb_person_cred_hist_length"] / DataFrame["person_age"]) * 100
+
+    # * Drop the "cb_person_cred_hist_length" column from the DataFrame because it is not useful for the model training
+    DataFrame.drop(columns=["cb_person_cred_hist_length"], inplace=True)
+
+    print("=" *80)
+    print("[bold red] DataFrame group by loan_status and describe the cred_hist_to_age_ratio column[/bold red] ")
+    print("=" *80)
+    print("=" * 80)
+    print(DataFrame.groupby("loan_status")["cred_hist_to_age_ratio"].describe())
+    print("=" * 80)
+    print(DataFrame["cred_hist_to_age_ratio"].describe())
+    print("=" *80)
+
     # ! Encoding the categorical columns to numerical values
 
     DataFrame["cb_person_default_on_file"] = DataFrame["cb_person_default_on_file"].map({"Y": 1, "N": 0})
