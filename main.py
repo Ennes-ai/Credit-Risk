@@ -132,8 +132,18 @@ def main():
     print("=" *80)
 
 
-    visualize_data(DataFrame= DataFrame, Target_Column=Target_Column)
+    #visualize_data(DataFrame= DataFrame, Target_Column=Target_Column)
 
+    sns.scatterplot(data=DataFrame, x="person_age", y="cb_person_cred_hist_length", hue="loan_status")
+    plt.xlabel("person_age")
+    plt.ylabel("cb_person_cred_hist_length")
+    plt.title("cb_person_cred_hist_length vs person_age")
+    plt.show()
+    print("=" *80)
+    print("[bold red] DataFrame Null Values[/bold red]")
+    print("=" *80)
+    print(DataFrame.isnull().sum().sum() if DataFrame.isnull().sum().sum() > 0 else "[bold green] No Null Values in the DataFrame[/bold green]")
+    print("=" *80)
     # ! Encoding the categorical columns to numerical values
 
     DataFrame["cb_person_default_on_file"] = DataFrame["cb_person_default_on_file"].map({"Y": 1, "N": 0})
