@@ -149,10 +149,15 @@ def main():
     # ! Feature Engineering
 
     # * Creating a new column called "cred_hist_to_age_ratio" which is storing the ratio of the credit history length to the age of person
-    DataFrame["cred_hist_to_age_ratio"] = (DataFrame["cb_person_cred_hist_length"] / DataFrame["person_age"]) * 100
+    DataFrame["cred_hist_to_age_ratio"] = (DataFrame["cb_person_cred_hist_length"] / DataFrame["person_age"]) 
 
     # * Drop the "cb_person_cred_hist_length" column from the DataFrame because it is not useful for the model training
     DataFrame.drop(columns=["cb_person_cred_hist_length"], inplace=True)
+
+
+    DataFrame["total_interest_cost"] = DataFrame["loan_amnt"] * (DataFrame["loan_int_rate"] / 100 )
+
+    
 
     print("=" *80)
     print("[bold red] DataFrame group by loan_status and describe the cred_hist_to_age_ratio column[/bold red] ")
