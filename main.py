@@ -4,6 +4,83 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from rich import print
 from IQR import Calculate
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, roc_curve, auc
+
+
+def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
+    X = DataFrame.drop(columns=[Target_Column])
+    y = DataFrame[Target_Column]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42 , stratify=y)
+
+    RFC = RandomForestClassifier(n_estimators=100, random_state=42 , n_jobs=-1)
+    RFC.fit(X_train, y_train)
+
+    y_pred = RFC.predict(X_test)
+    y_proba = RFC.predict_proba(X_test)[:, 1]
+
+    c_matrix = confusion_matrix(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_proba)
+
+    sns.heatmap(c_matrix, annot=True, fmt="d", cmap="Blues")
+    plt.show()
+
+
+
+    print("=" *80)
+    print("[bold red] Model Accuracy [/bold red]  ")
+    print("=" *80)
+    print(accuracy_score(y_test, y_pred))
+    print("=" *80)
+
+    print("=" *80)
+    print("[bold red] Classification Report [/bold red]  ")
+    print("=" *80)
+    print(classification_report(y_test, y_pred))
+    print("=" *80)
+
+    print("=" *80)
+    print("[bold red] Confusion Matrix [/bold red]  ")
+    print("=" *80)
+    print(c_matrix)
+    print("=" *80)
+
+    print("=" *80)
+    print("[bold red] ROC AUC Score [/bold red]  ")
+    print("=" *80)
+    print(roc_auc)
+    print("=" *80)
+
+    print("=" *80)
+    print("[bold red] ROC Curve [/bold red]  ")
+    print("=" *80)
+    fpr, tpr, thresholds = roc_curve(y_test, y_proba)
+    roc_auc = auc(fpr, tpr)
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+    print("=" *80)
+
+    """
+    ROC eğrisi, mümkün olan her eşikte (pratikte, seçilen aralıklarda) gerçek pozitif oranı 
+    (TPR) ve yanlış pozitif oranı (FPR) hesaplanarak ve ardından TPR'nin FPR'ye göre grafiği çizilerek oluşturulur
+    """
+
+    train_auc = roc_auc_score(y_train, RFC.predict_proba(X_train)[:, 1])
+    test_auc = roc_auc_score(y_test, RFC.predict_proba(X_test)[:, 1])
+
+    print(f"Eğitim Seti ROC-AUC : {train_auc:.4f}")
+    print(f"Test Seti ROC-AUC   : {test_auc:.4f}")
 
 
 
@@ -148,16 +225,19 @@ def main():
 
     # ! Feature Engineering
 
-    # * Creating a new column called "cred_hist_to_age_ratio" which is storing the ratio of the credit history length to the age of person
-    DataFrame["cred_hist_to_age_ratio"] = (DataFrame["cb_person_cred_hist_length"] / DataFrame["person_age"]) 
-
-    # * Drop the "cb_person_cred_hist_length" column from the DataFrame because it is not useful for the model training
+   # 1. Kredi Geçmişi / Yaş Oranı 
+    DataFrame["cred_hist_to_age_ratio"] = DataFrame["cb_person_cred_hist_length"] / DataFrame["person_age"]
     DataFrame.drop(columns=["cb_person_cred_hist_length"], inplace=True)
 
+    # 2. Toplam Faiz Maliyeti 
+    DataFrame["total_interest_cost"] = DataFrame["loan_amnt"] * (DataFrame["loan_int_rate"] / 100)
 
-    DataFrame["total_interest_cost"] = DataFrame["loan_amnt"] * (DataFrame["loan_int_rate"] / 100 )
+    # 3. Çalışma Yılı Başına Düşen Kredi Tutarı 
+    DataFrame["loan_to_emp_ratio"] = DataFrame["loan_amnt"] / (DataFrame["person_emp_length"] + 1)
 
-    
+    # 4. İş Tecrübesi / Yaş Oranı 
+    DataFrame["emp_to_age_ratio"] = DataFrame["person_emp_length"] / DataFrame["person_age"]
+
 
     print("=" *80)
     print("[bold red] DataFrame group by loan_status and describe the cred_hist_to_age_ratio column[/bold red] ")
@@ -182,7 +262,8 @@ def main():
     #print("=" *80)
     #print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes) # ! Encoding is over all column is to be correct data type is int64
 
-
+    create_model(DataFrame = DataFrame,
+                 Target_Column = Target_Column)
 
 
 if __name__ == "__main__":
