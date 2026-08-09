@@ -83,6 +83,18 @@ def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
     print(f"Test Seti ROC-AUC   : {test_auc:.4f}")
 
 
+    feature_importances = pd.Series(
+        RFC.feature_importances_ , index = X.columns
+    ).sort_values(ascending = False)
+
+    plt.figure(figsize = (10,6))
+    sns.barplot(x = feature_importances , y = feature_importances.index , palette = "viridis")
+    plt.title("Feature İmportanes")
+    plt.xlabel("feature imp.")
+    plt.ylabel("index")
+    plt.show()
+
+
 
 
 def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
@@ -101,8 +113,8 @@ Sağa Çarpık Dağılımın Altın Kuralı:Kuyruk sağdaki büyük sayılara do
 Bu grafiklerde her zaman: Ortalama (Mean) > Medyan (Median) çıkar.
 """
 
-def detect_outliers(data: pd.Series) -> pd.Series:
-    global continuous_cols
+def detect_outliers():
+    
     # ! just take the continuous columns to find the outliers
     continuous_cols = [
         "person_age",
@@ -169,7 +181,7 @@ def main():
 
     DataFrame["loan_int_rate"] = DataFrame.groupby("loan_grade")["loan_int_rate"].transform(lambda x: x.fillna(x.median()))
 
-    detect_outliers(DataFrame)
+    detect_outliers()
     # ! claer the outliers in the continuous columns
     DataFrame = DataFrame[DataFrame["person_age"] < 100]
     DataFrame = DataFrame[DataFrame["person_emp_length"] < 60]
