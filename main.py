@@ -94,7 +94,11 @@ def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
     plt.ylabel("index")
     plt.show()
 
-
+def template(title : str = None , description  = None , title_color : str = None):
+    print("=" * 80)
+    print(f"[bold {title_color.lower()}] {title} [/bold {title_color.lower()}]")
+    print("="*80)
+    print(description)
 
 
 def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
@@ -104,7 +108,7 @@ def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
             sns.histplot(DataFrame[column], bins=30, kde=True)
             plt.title(f"Distribution of {column}")
             plt.show()
-            
+
 """
 person_income, person_age, person_emp_length 
 
@@ -124,10 +128,7 @@ def detect_outliers():
         "loan_int_rate"
     ]
 
-    print("=" * 80)
-    print("[bold red] Outliers in DataFrame [/bold red]")
-    print("=" * 80)
-
+    template(title= "Outliers in DataFrame" , title_color="red")
   
     for column in continuous_cols:
         outliers = calculate.get_outliers(column)
@@ -145,11 +146,8 @@ def main():
     DataFrame = pd.read_csv("credit_risk_dataset.csv")
     calculate = Calculate(DataFrame = DataFrame)
 
-    print("=" *80)
-    print("[bold red] DataFrame Head [/bold red] \n ", DataFrame.head(20))
-    print("=" *80)
-    print("[bold red] DataFrame Describe [/bold red] \n ", DataFrame.describe())
-    print("=" *80)
+    template(title="DataFrame Head",title_color="red",description=DataFrame.head(20))
+    template(title="DataFrame Describe" ,title_color="red",description=DataFrame.describe())
     #print("[bold red] DataFrame shape [/bold red] \n ", DataFrame.shape)
     #print("=" *80)
 
@@ -167,12 +165,6 @@ def main():
     # sns.heatmap(DataFrame.corr(numeric_only=True), annot=True, cmap="coolwarm")
     # plt.title("Correlation Heatmap")
     # plt.show()
-
-    Dataframe_Filtered = DataFrame[DataFrame["person_income"] < 150000]
-
-
-    
-
 
      # * filling the missing values in the person_emp_Length column with the median value of that column
      # * Because the filling the missing values with the median method is less sensitive to outliers than the mean
@@ -194,6 +186,7 @@ def main():
     DataFrame["loan_amnt"] = np.where(DataFrame["loan_amnt"] > loan_cap, loan_cap, DataFrame["loan_amnt"])
 
 
+
     print("=" * 80)
     print("[bold green] Temizlik Sonrası Maksimum Değerler [/bold green]")
     print("Maksimum Yaş:          ", DataFrame["person_age"].max())
@@ -210,15 +203,9 @@ def main():
     # print("[bold red] DataFrame Null Values[/bold red]")
     # print("=" *80)
     # print(DataFrame.isnull().sum())
-    print("=" *80)
-    print("[bold red] DataFrame Info [/bold red] ")
-    print("=" *80)
-    print(DataFrame.info())
-    print("=" *80)
-    print("[bold red] DataFrame Type The Columns [/bold red] ") # ! Clear all the columns data types is correct, we don't need to change any data type
-    print("=" *80)
-    print(DataFrame.dtypes)
-    print("=" *80)
+    template(title="DataFrame Info" ,title_color="red",description=DataFrame.info())
+    template(title="DataFrame Type The Columns",title_color="red",description=DataFrame.dtypes) # ! Clear all the columns data types is correct, we don't need to change any data type
+    
 
 
     #visualize_data(DataFrame= DataFrame, Target_Column=Target_Column)
@@ -228,11 +215,9 @@ def main():
     plt.ylabel("cb_person_cred_hist_length")
     plt.title("cb_person_cred_hist_length vs person_age")
     plt.show()
-    print("=" *80)
-    print("[bold red] DataFrame Null Values[/bold red]")
-    print("=" *80)
-    print(DataFrame.isnull().sum().sum() if DataFrame.isnull().sum().sum() > 0 else "[bold green] No Null Values in the DataFrame[/bold green]")
-    print("=" *80)
+    
+    template(title="DataFrame Null Values" , title_color="red",description=DataFrame.isnull().sum().sum() if DataFrame.isnull().sum().sum() > 0 else "[bold green] No Null Values in the DataFrame[/bold green]")
+   
 
 
     # ! Feature Engineering
@@ -251,14 +236,7 @@ def main():
     DataFrame["emp_to_age_ratio"] = DataFrame["person_emp_length"] / DataFrame["person_age"]
 
 
-    print("=" *80)
-    print("[bold red] DataFrame group by loan_status and describe the cred_hist_to_age_ratio column[/bold red] ")
-    print("=" *80)
-    print("=" * 80)
-    print(DataFrame.groupby("loan_status")["cred_hist_to_age_ratio"].describe())
-    print("=" * 80)
-    print(DataFrame["cred_hist_to_age_ratio"].describe())
-    print("=" *80)
+    template(title="DataFrame group by loan_status",title_color="red",description=DataFrame.groupby("loan_status")["cred_hist_to_age_ratio"].describe())
 
     # ! Encoding the categorical columns to numerical values
 
@@ -267,10 +245,7 @@ def main():
 
     DataFrame = pd.get_dummies(data = DataFrame, columns = ["person_home_ownership" , "loan_intent"] , drop_first = True , dtype = int)
 
-    print("=" *80)
-    print("[bold red] DataFrame Head After Encoding [/bold red] ")
-    print("=" *80)
-    print(DataFrame.head())
+    template(title="DataFrame Head After Encoding" ,title_color="red", description=DataFrame.head())
     #print("=" *80)
     #print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes) # ! Encoding is over all column is to be correct data type is int64
 
