@@ -4,18 +4,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from rich import print
 from IQR import Calculate
+from typing import Tuple
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.metrics import roc_auc_score, roc_curve, auc
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 
 
-def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
-    X = DataFrame.drop(columns=[Target_Column])
-    y = DataFrame[Target_Column]
+def split(DataFrame : pd.DataFrame , target_column_name : str , test_size : float = 0.2 , random_state : int = 42):
+    X = DataFrame.drop(columns=[target_column_name])
+    y = DataFrame[target_column_name]
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state= random_state , stratify=y, shuffle= True)
+    return X_train, X_test, y_train, y_test
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42 , stratify=y)
-
+def create_model(X_train , X_test , y_train, y_test):
+    
     RFC = RandomForestClassifier(n_estimators=100, random_state=42 , n_jobs=-1)
     RFC.fit(X_train, y_train)
 
@@ -24,39 +30,21 @@ def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
 
     c_matrix = confusion_matrix(y_test, y_pred)
     roc_auc = roc_auc_score(y_test, y_proba)
+    acc_score = accuracy_score(y_test, y_pred)
 
     sns.heatmap(c_matrix, annot=True, fmt="d", cmap="Blues")
     plt.show()
 
 
+    template(title="Model Accuracy" , title_color="red" , description=acc_score)
+    
+    template(title="Classification Report",title_color="red",description=classification_report(y_test, y_pred))
+    
+    template(title="Confusion Matrix",title_color="red",description=c_matrix)
+    
+    template(title="ROC AUC Score",title_color="red",description=roc_auc)
+    
 
-    print("=" *80)
-    print("[bold red] Model Accuracy [/bold red]  ")
-    print("=" *80)
-    print(accuracy_score(y_test, y_pred))
-    print("=" *80)
-
-    print("=" *80)
-    print("[bold red] Classification Report [/bold red]  ")
-    print("=" *80)
-    print(classification_report(y_test, y_pred))
-    print("=" *80)
-
-    print("=" *80)
-    print("[bold red] Confusion Matrix [/bold red]  ")
-    print("=" *80)
-    print(c_matrix)
-    print("=" *80)
-
-    print("=" *80)
-    print("[bold red] ROC AUC Score [/bold red]  ")
-    print("=" *80)
-    print(roc_auc)
-    print("=" *80)
-
-    print("=" *80)
-    print("[bold red] ROC Curve [/bold red]  ")
-    print("=" *80)
     fpr, tpr, thresholds = roc_curve(y_test, y_proba)
     roc_auc = auc(fpr, tpr)
     plt.figure()
@@ -84,7 +72,7 @@ def create_model(DataFrame : pd.DataFrame , Target_Column : str = None):
 
 
     feature_importances = pd.Series(
-        RFC.feature_importances_ , index = X.columns
+        RFC.feature_importances_ , index = X_train.columns
     ).sort_values(ascending = False)
 
     plt.figure(figsize = (10,6))
@@ -100,6 +88,42 @@ def template(title : str = None , description  = None , title_color : str = None
     print("="*80)
     print(description)
 
+def label_encoding(X_train : pd.DataFrame , X_test : pd.DataFrame , categoricial_cols : list[str])-> Tuple[pd.DataFrame, pd.DataFrame, ColumnTransformer]:
+    # ! Encoding the categorical columns to numerical values
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            (
+                "cat_encoder",
+                OneHotEncoder(drop="first" , handle_unknown="ignore"),
+                categoricial_cols
+            )
+        ],
+        remainder="passthrough",
+    )
+    
+    X_train_array = preprocessor.fit_transform(X_train)
+    X_test_array = preprocessor.transform(X_test)
+    ohe_feature_names = preprocessor.named_transformers_[
+        "cat_encoder"
+    ].get_feature_names_out(categoricial_cols)
+
+    # B. İşlenmeden pas geçen diğer (sayısal) sütun isimlerini alıyoruz
+    passthrough_cols = [c for c in X_train.columns if c not in categoricial_cols]
+
+    # C. Tüm sütun isimlerini birleştiriyoruz
+    all_feature_names = list(ohe_feature_names) + passthrough_cols
+
+    # D. DataFrame formatına dönüştürüyoruz
+    X_train_encoded = pd.DataFrame(
+        X_train_array, columns=all_feature_names, index=X_train.index
+    )
+    X_test_encoded = pd.DataFrame(
+        X_test_array, columns=all_feature_names, index=X_test.index
+    )
+
+    return X_train_encoded, X_test_encoded, preprocessor
+   
 
 def visualize_data(DataFrame: pd.DataFrame , Target_Column: str = None):
     for column in DataFrame.columns:
@@ -238,19 +262,24 @@ def main():
 
     template(title="DataFrame group by loan_status",title_color="red",description=DataFrame.groupby("loan_status")["cred_hist_to_age_ratio"].describe())
 
-    # ! Encoding the categorical columns to numerical values
-
+    # Metin (String) içeren bu iki sütunu sayısala çeviriyoruz
     DataFrame["cb_person_default_on_file"] = DataFrame["cb_person_default_on_file"].map({"Y": 1, "N": 0})
     DataFrame["loan_grade"] = DataFrame["loan_grade"].map({"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7})
-
-    DataFrame = pd.get_dummies(data = DataFrame, columns = ["person_home_ownership" , "loan_intent"] , drop_first = True , dtype = int)
-
-    template(title="DataFrame Head After Encoding" ,title_color="red", description=DataFrame.head())
     #print("=" *80)
     #print("[bold red] DataFrame dtypes After Encoding[/bold red] ", DataFrame.dtypes) # ! Encoding is over all column is to be correct data type is int64
+    X_train, X_test, y_train, y_test = split(DataFrame= DataFrame , target_column_name= Target_Column)
 
-    create_model(DataFrame = DataFrame,
-                 Target_Column = Target_Column)
+    categorical_cols = ["person_home_ownership", "loan_intent"]
+    
+    X_train_encoded, X_test_encoded, preprocessor = label_encoding(
+    X_train=X_train, X_test=X_test, categoricial_cols=categorical_cols
+)
+    create_model(
+                 X_test= X_test_encoded,
+                 X_train= X_train_encoded,
+                 y_train=y_train,
+                 y_test=y_test)
+    
 
 
 if __name__ == "__main__":
